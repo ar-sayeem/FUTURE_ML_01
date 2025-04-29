@@ -127,5 +127,4 @@ Here are some sample outputs from the Exploratory Data Analysis (EDA):
 
 ## Acknowledgements
 - Thanks to [Kaggle](https://www.kaggle.com/) for providing the sample sales dataset.
-- Special thanks to **ChatGPT** for guidance and support throughout the project.
 - This project is a part of the **Future ML** initiative.
