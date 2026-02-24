@@ -46,7 +46,7 @@ The notebook covers:
 | Python | Core programming language |
 | pandas | Data loading, cleaning, and transformation |
 | matplotlib | Visualizations and trend plots |
-| seaborn | Advanced plots and heatmaps |
+| seaborn | Correlation heatmap |
 | prophet | Time-series forecasting model |
 | scikit-learn | Evaluation metrics (MAE, RMSE) |
 | Jupyter Notebook | Interactive development environment |
@@ -71,54 +71,55 @@ Load the sales CSV into a pandas DataFrame for inspection and processing.
 
 ### 2. Data Preprocessing
 - Parse `ORDERDATE` to datetime format
-- Handle missing values and duplicates
-- Feature engineering from date columns (Month, Year, Quarter)
-- Aggregate transaction-level data into daily sales totals
+- Drop duplicates and check for missing values
+- Group transaction-level data into daily sales totals
 - Rename columns to Prophet schema: `ds` (date) and `y` (sales)
 
 ### 3. Exploratory Data Analysis (EDA)
 - Plot sales trends over time
-- Generate a correlation matrix heatmap
-- Visualize moving averages to capture trends and seasonality
+- Generate a correlation heatmap on numeric features
+- Visualize a 12-period moving average over raw sales
 
 ### 4. Train / Test Split
-- Chronological (80/20) split to preserve time ordering:
-  ```python
-  split_index = int(len(sales_data) * 0.8)
-  train = sales_data.iloc[:split_index]
-  test  = sales_data.iloc[split_index:]
-  ```
+Chronological 80/20 split to preserve time ordering:
+```python
+split_index = int(len(sales_data) * 0.8)
+train = sales_data.iloc[:split_index]
+test  = sales_data.iloc[split_index:]
+```
 
 ### 5. Model Building
 - Fit **Prophet** on the training set
-- Generate predictions for test dates and future dates
+- Generate future dates (180 days ahead) for forecasting
+- Separately predict on test dates for evaluation
 
 ### 6. Model Evaluation
-- Compute **MAE** and **RMSE** on test set predictions
-- Plot **Actual vs Predicted Sales**
-- Analyze **Residuals Distribution** and **Residuals vs Predicted**
+- Compute **MAE** and **RMSE** on real test set predictions
+- Plot **Actual vs Predicted Sales** using real model output
 
 ### 7. Forecast Export
-- Export forecast output to `forecasted_sales.csv`
+- Export forecast to `forecasted_sales.csv`
 - Columns: `ds`, `yhat`, `yhat_lower`, `yhat_upper`
 
 ---
 
 ## Model Details
 
-The project uses **Prophet** in two modes:
+Prophet is fit in two passes:
 
-**Future Forecasting Mode**
+**Full Forecast Mode** (all data → 6 months ahead)
 ```python
+model = Prophet()
+model.fit(sales_data)
 future   = model.make_future_dataframe(periods=180)
 forecast = model.predict(future)
 ```
 
-**Evaluation Mode (Train/Test)**
+**Evaluation Mode** (train only → predict on test dates)
 ```python
-# Fit only on training data, predict on test dates
+model = Prophet()
 model.fit(train)
-forecast = model.predict(test[['ds']])
+forecast_test = model.predict(test[['ds']])
 ```
 
 ---
@@ -129,8 +130,6 @@ forecast = model.predict(test[['ds']])
 |---|---|
 | MAE (Mean Absolute Error) | **19,815.74** |
 | RMSE (Root Mean Square Error) | **23,827.22** |
-
-The notebook demonstrates a working end-to-end forecasting pipeline and exports predictions to `forecasted_sales.csv`.
 
 ---
 
@@ -145,7 +144,7 @@ The notebook demonstrates a working end-to-end forecasting pipeline and exports 
 ### Moving Average Plot
 ![Moving Average](images/moving_average_plot.png)
 
-### Sales Forecast
+### Sales Forecast (6 Months Ahead)
 ![Sales Forecast](images/sales_forecast.png)
 
 ### Seasonality Components
@@ -153,9 +152,6 @@ The notebook demonstrates a working end-to-end forecasting pipeline and exports 
 
 ### Actual vs Predicted (Test Set)
 ![Actual vs Predicted](images/actual_vs_predicted.png)
-
-### Residuals Distribution
-![Residuals Distribution](images/residuals_distribution.png)
 
 > All images are saved in the `images/` folder.
 
@@ -165,7 +161,7 @@ The notebook demonstrates a working end-to-end forecasting pipeline and exports 
 
 ```
 FUTURE_ML_01/
-├── sales_forecasting.ipynb     # Main Jupyter Notebook (all code + outputs)
+├── sales_forecasting.ipynb     # Main Jupyter Notebook
 ├── sales_data_sample.csv       # Raw dataset
 ├── forecasted_sales.csv        # Exported forecast output
 ├── images/                     # Saved visualization plots
@@ -203,26 +199,27 @@ To apply this workflow to updated or new data:
 1. Keep the same schema prep (`ORDERDATE` → `ds`, `SALES` → `y`)
 2. Re-run the training cells in `sales_forecasting.ipynb`
 3. Adjust the forecast horizon by changing `periods` in `make_future_dataframe()`
-4. Re-export `forecasted_sales.csv` for downstream reporting or dashboarding
+4. Re-export `forecasted_sales.csv` for downstream use
 
 ---
 
 ## Limitations
 
-- Uses a single primary target signal (`SALES`) with limited exogenous variables
-- No holiday or promotional event regressors in the current version
-- Baseline model only — no extensive hyperparameter search
-- Data quality and seasonality assumptions depend on the source records
+- Uses a single target signal (`SALES`) with no exogenous variables
+- No holiday or promotional event regressors included
+- Baseline model only — no hyperparameter tuning performed
+- Moving average EDA is on raw transaction-level data, not the daily-aggregated series used for modeling
+- The residuals analysis in the notebook currently uses simulated data and does not reflect real model output
 
 ---
 
 ## Future Improvements
 
+- Fix residuals analysis to use real model predictions instead of simulated data
 - Add holiday/event regressors for better seasonality modeling
 - Compare Prophet with ARIMA, XGBoost, and LSTM baselines
 - Implement time-series cross-validation for robustness
-- Package the notebook workflow into reproducible Python scripts
-- Hyperparameter tuning for Prophet (changepoint scale, seasonality mode, etc.)
+- Hyperparameter tuning (changepoint scale, seasonality mode, etc.)
 
 ---
 
