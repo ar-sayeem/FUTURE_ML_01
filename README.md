@@ -1,70 +1,140 @@
 # FUTURE_ML_01 - Sales Forecasting for Retail Business
 
-## Project Overview
-This project is part of the **Future ML** program, focusing on **sales forecasting** using machine learning models and data analysis techniques.  
-The objective is to build a regression model that can predict future sales based on historical sales transaction data.
-
-I used **Python**, **Pandas**, **Scikit-learn**, **Matplotlib**, and **Seaborn** to preprocess the data, build the model, perform evaluation, and visualize insights.
+> A complete end-to-end time-series sales forecasting project built as part of the **Future ML** program.  
+> Uses historical retail transaction data and the **Prophet** forecasting model to predict future sales.
 
 ---
 
-## Tools and Libraries
-- Python
-- Pandas
-- Scikit-learn (for machine learning models and evaluation metrics)
-- Matplotlib (for visualizations)
-- Seaborn (for advanced plots and heatmaps)
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Tech Stack](#tech-stack)
+- [Dataset](#dataset)
+- [Project Workflow](#project-workflow)
+- [Model Details](#model-details)
+- [Results](#results)
+- [Visualizations](#visualizations)
+- [Repository Structure](#repository-structure)
+- [How to Run](#how-to-run)
+- [Quick Reuse Guide](#quick-reuse-guide)
+- [Limitations](#limitations)
+- [Future Improvements](#future-improvements)
+- [Author](#author)
+- [Acknowledgements](#acknowledgements)
+
+---
+
+## Project Overview
+
+Retail teams need forward-looking sales estimates to support planning, inventory management, and business decisions. This project builds a baseline forecasting workflow — from raw order records all the way to future sales predictions.
+
+The notebook covers:
+
+- Data loading, cleaning, and preprocessing
+- Time-series preparation from transaction-level records
+- Exploratory Data Analysis (EDA) and trend visualization
+- Forecasting with **Prophet**
+- Model evaluation using **MAE** and **RMSE**
+- Export of forecasted values for downstream reporting
+
+---
+
+## Tech Stack
+
+| Tool | Purpose |
+|---|---|
+| Python | Core programming language |
+| pandas | Data loading, cleaning, and transformation |
+| matplotlib | Visualizations and trend plots |
+| seaborn | Advanced plots and heatmaps |
+| prophet | Time-series forecasting model |
+| scikit-learn | Evaluation metrics (MAE, RMSE) |
+| Jupyter Notebook | Interactive development environment |
 
 ---
 
 ## Dataset
-- Source: [Sample Sales Data from Kaggle](https://www.kaggle.com/datasets/kyanyoga/sample-sales-data)
-- Description: The dataset contains historical sales transaction data including order numbers, sales figures, product lines, dates, and more.
+
+- **Source:** [Sample Sales Data — Kaggle](https://www.kaggle.com/datasets/kyanyoga/sample-sales-data)
+- **File in repo:** `sales_data_sample.csv`
+- **Description:** Historical retail sales transaction records including order numbers, sales figures, product lines, dates, and more.
+- **Key fields used:**
+  - `ORDERDATE` — transaction date
+  - `SALES` — revenue per transaction
 
 ---
 
 ## Project Workflow
-1. **Data Loading:**  
-   Load the sales data into a Pandas DataFrame.
 
-2. **Data Preprocessing:**  
-   - Handle missing values and duplicates.
-   - Convert dates to datetime objects.
-   - Feature engineering from date columns (Month, Year, Quarter).
-   - Select relevant features for modeling.
+### 1. Data Loading
+Load the sales CSV into a pandas DataFrame for inspection and processing.
 
-3. **Exploratory Data Analysis (EDA):**  
-   - Plot sales trends over time.
-   - Generate a correlation matrix heatmap.
-   - Visualize moving averages to capture trends and seasonality.
+### 2. Data Preprocessing
+- Parse `ORDERDATE` to datetime format
+- Handle missing values and duplicates
+- Feature engineering from date columns (Month, Year, Quarter)
+- Aggregate transaction-level data into daily sales totals
+- Rename columns to Prophet schema: `ds` (date) and `y` (sales)
 
-4. **Model Building:**  
-   - Split the data into training and testing sets.
-   - Train a **Linear Regression** model to predict sales.
+### 3. Exploratory Data Analysis (EDA)
+- Plot sales trends over time
+- Generate a correlation matrix heatmap
+- Visualize moving averages to capture trends and seasonality
 
-5. **Model Evaluation:**  
-   - Evaluate model performance using **MAE** (Mean Absolute Error) and **RMSE** (Root Mean Squared Error).
-   - Plot **Actual vs Predicted Sales**.
-   - Analyze **Residuals Distribution** and **Residuals vs Predicted** plots.
+### 4. Train / Test Split
+- Chronological (80/20) split to preserve time ordering:
+  ```python
+  split_index = int(len(sales_data) * 0.8)
+  train = sales_data.iloc[:split_index]
+  test  = sales_data.iloc[split_index:]
+  ```
 
-6. **Visualization:**  
-   - Feature Correlation Heatmap
-   - Sales Moving Average Plot
-   - Actual vs Predicted Sales Comparison
-   - Residual Analysis
+### 5. Model Building
+- Fit **Prophet** on the training set
+- Generate predictions for test dates and future dates
+
+### 6. Model Evaluation
+- Compute **MAE** and **RMSE** on test set predictions
+- Plot **Actual vs Predicted Sales**
+- Analyze **Residuals Distribution** and **Residuals vs Predicted**
+
+### 7. Forecast Export
+- Export forecast output to `forecasted_sales.csv`
+- Columns: `ds`, `yhat`, `yhat_lower`, `yhat_upper`
+
+---
+
+## Model Details
+
+The project uses **Prophet** in two modes:
+
+**Future Forecasting Mode**
+```python
+future   = model.make_future_dataframe(periods=180)
+forecast = model.predict(future)
+```
+
+**Evaluation Mode (Train/Test)**
+```python
+# Fit only on training data, predict on test dates
+model.fit(train)
+forecast = model.predict(test[['ds']])
+```
 
 ---
 
 ## Results
-- Built a machine learning model capable of predicting sales based on historical patterns.
-- Visualized sales trends, feature relationships, and residual behaviors.
-- Achieved reasonable forecasting performance evaluated by MAE and RMSE metrics.
+
+| Metric | Value |
+|---|---|
+| MAE (Mean Absolute Error) | **19,815.74** |
+| RMSE (Root Mean Square Error) | **23,827.22** |
+
+The notebook demonstrates a working end-to-end forecasting pipeline and exports predictions to `forecasted_sales.csv`.
 
 ---
 
-## Sample Visualizations
-
-Here are some sample outputs from the Exploratory Data Analysis (EDA):
+## Visualizations
 
 ### Sales Over Time
 ![Sales Over Time](images/sales_over_time.png)
@@ -75,56 +145,96 @@ Here are some sample outputs from the Exploratory Data Analysis (EDA):
 ### Moving Average Plot
 ![Moving Average](images/moving_average_plot.png)
 
-### Actual vs Predicted Sales
+### Sales Forecast
+![Sales Forecast](images/sales_forecast.png)
+
+### Seasonality Components
+![Seasonality Components](images/seasonality_components.png)
+
+### Actual vs Predicted (Test Set)
 ![Actual vs Predicted](images/actual_vs_predicted.png)
 
 ### Residuals Distribution
 ![Residuals Distribution](images/residuals_distribution.png)
 
-*Note: Images are saved inside the `images/` folder.*
+> All images are saved in the `images/` folder.
 
 ---
 
+## Repository Structure
 
-## Folder Structure
 ```
-/FUTURE_ML_01
-│
-├── images/
-├── README.md
-├── sales_forecasting.ipynb   # Jupyter Notebook with all code and outputs
-├── sample-sales-data.csv     # Dataset used
-└── forecasted_sales.csv      # (Optional) Output of forecasted sales
+FUTURE_ML_01/
+├── sales_forecasting.ipynb     # Main Jupyter Notebook (all code + outputs)
+├── sales_data_sample.csv       # Raw dataset
+├── forecasted_sales.csv        # Exported forecast output
+├── images/                     # Saved visualization plots
+└── README.md
 ```
 
 ---
 
-## How to Run the Project
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/FUTURE_ML_01.git
-   ```
-2. Install required libraries:
-   ```bash
-   pip install pandas matplotlib prophet scikit-learn
-   ```
-3. Open the Jupyter Notebook and run each cell step-by-step.
+## How to Run
+
+**1. Clone the repository:**
+```bash
+git clone https://github.com/yourusername/FUTURE_ML_01.git
+cd FUTURE_ML_01
+```
+
+**2. Install dependencies:**
+```bash
+pip install pandas matplotlib seaborn prophet scikit-learn jupyter
+```
+
+**3. Launch Jupyter and open the notebook:**
+```bash
+jupyter notebook sales_forecasting.ipynb
+```
+
+**4.** Run cells in order to reproduce preprocessing, EDA, training, evaluation, and forecasts.
+
+---
+
+## Quick Reuse Guide
+
+To apply this workflow to updated or new data:
+
+1. Keep the same schema prep (`ORDERDATE` → `ds`, `SALES` → `y`)
+2. Re-run the training cells in `sales_forecasting.ipynb`
+3. Adjust the forecast horizon by changing `periods` in `make_future_dataframe()`
+4. Re-export `forecasted_sales.csv` for downstream reporting or dashboarding
+
+---
+
+## Limitations
+
+- Uses a single primary target signal (`SALES`) with limited exogenous variables
+- No holiday or promotional event regressors in the current version
+- Baseline model only — no extensive hyperparameter search
+- Data quality and seasonality assumptions depend on the source records
 
 ---
 
 ## Future Improvements
-- Use more complex models (e.g., ARIMA, LSTM) for better accuracy.
-- Incorporate additional features (like promotions, holidays) into the model.
-- Tune hyperparameters in Prophet for improved forecasting.
+
+- Add holiday/event regressors for better seasonality modeling
+- Compare Prophet with ARIMA, XGBoost, and LSTM baselines
+- Implement time-series cross-validation for robustness
+- Package the notebook workflow into reproducible Python scripts
+- Hyperparameter tuning for Prophet (changepoint scale, seasonality mode, etc.)
 
 ---
 
 ## Author
-- [Adnan Rahman Sayeem]
-- Connect with me on [LinkedIn](https://www.linkedin.com/in/adnan-rahman-sayeem/)
+
+**Adnan Rahman Sayeem**  
+Connect on [LinkedIn](https://www.linkedin.com/in/adnan-rahman-sayeem/)
 
 ---
 
 ## Acknowledgements
-- Thanks to [Kaggle](https://www.kaggle.com/) for providing the sample sales dataset.
-- This project is a part of the **Future ML** initiative.
+
+- [Kaggle](https://www.kaggle.com/) for the sample sales dataset
+- The **Future ML** program for the project framework
+- Prophet (Meta) for the open-source forecasting library
